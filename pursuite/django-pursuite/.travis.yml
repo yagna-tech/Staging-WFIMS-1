@@ -1,0 +1,16 @@
+language: python
+virtualenv:
+  system_site_packages: false
+python:
+  - "2.7"
+services:
+  - elasticsearch
+before_install:
+  - sudo apt-get install python-lxml
+install:
+  - pip install flake8
+  - python setup.py install
+script:
+  - python manage.py test admin --settings=pursuite.settings.testing
+  - python manage.py test analytics --settings=pursuite.settings.testing
+  - flake8 .

@@ -1,0 +1,218 @@
+{% extends "article.html" %}
+{% load filters %}
+{% block title %}
+  Search {% if query %}"{{query}}"{% endif %}
+{% endblock %}
+
+{% block breadcrumb %}
+  <div class="row-fluid">
+    <ul class="breadcrumb">
+      <li><a href="/">Home</a> » </li>
+      <li>Search {% if query %}- {{query}}{% endif %}</li>
+    </ul>
+  </div>
+{% endblock %}
+
+{% block heading %}
+ Search
+{% endblock %}
+{% block article %}
+<div class="row-fluid">
+  <div class="span3">
+    {% for key in "model_type,sector,sub_sector,occupation"|split:"," %}
+      {% if facets.fields.items|get_value:key %}
+        <div class="accordion" id="filter-by-{{key}}">
+          <div class="accordion-group">
+            <div class="accordion-heading">
+              <a class="accordion-toggle" data-toggle="collapse" data-parent="#filter-by-{{key}}" href="#collapse-{{key}}">
+                {% if key == 'model_type' %}
+                  result type
+                {% elif key == 'sub_sector' %}
+                  Sub-sector
+                {% else %}
+                  {{ key }}
+                {% endif %}
+              </a>
+            </div>
+            <div id="collapse-{{key}}" class="accordion-body collapse in">
+              <div class="accordion-inner">
+                <form>
+                  {% for s in facets.fields.items|get_value:key|slice:":5" %}
+                    <label class="checkbox facet-select">
+                      <input type="checkbox" class="facet-checkbox">
+                      <a href="#" facet="{{key}}:{{ s.0|urlencode }}">
+                        {# Sorry for all this mess, we are helpless #}
+                        {% if s.0 == 'it_services' %}
+                          IT Services
+                        {% elif s.0 == 'ites' %}
+                          IT-ITes
+                        {% elif s.0 == 'engineering_and_r_d' %}
+                          Engineering and R&D
+                        {% else %}
+                          {{ s.0 }}
+                        {% endif %}
+                      </a> ({{ s.1 }})
+                    </label>
+                  {% endfor %}
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
+  <!--Search Result Pane-->
+  <div class="span9">
+    <div class="row-fluid">
+      <!--Searched term -->
+      <form method="GET" action=".">
+        <div class="input-append">
+         <input id="appendedInputButton" class="input-xlarge" type="text" name="q" value="{{query}}">
+          <input class="btn" type="submit" />
+        </div>
+      </form>
+      <h4 class="searched-query">{% if query %}"{{query}}"{% endif %}</h4>
+    </div>
+    <div class="row-fluid">
+      <!-- Search Object -->
+      {% if query %}
+        {% for result in page.object_list %}
+          <div class="media">
+            <div class="media-body">
+                <a href="{{ result.object.get_absolute_url }}"><h4 class="media-heading">{% firstof result.object.title result.object %}</h4></a> 
+                <p>
+                    {{result.verbose_name}} - {{result.object}}
+                    {% if  result.object.job_role.job_role %} ({{result.object.job_role.job_role}}) {% endif %}
+                </p>
+            </div>
+          </div>
+          <hr />
+          {% empty %}
+          <p>No results found.</p>
+        {% endfor %}
+        <!--Pagination -->
+        {% if page.has_previous or page.has_next %}
+          <div class="pagination pull-right">
+            <ul>
+              {% if page.has_previous %}
+                <li><a href="?q={{ query }}&amp;page={{ page.previous_page_number }}">Prev</a></li>
+              {% else %}
+                <li class="disabled"><a>Prev</a></li>
+              {% endif %}
+
+              {% for pageno in paginator.page_range %}
+                <li
+                  {% if page.number == pageno %}
+                  class="active"
+                  {% endif %}
+                >
+                  <a href="?q={{query}}&amp;page={{pageno}}">{{pageno}}</a>
+                </li>
+              {% endfor %}
+
+              {% if page.has_next %}
+                <li><a href="?q={{ query }}&amp;page={{ page.next_page_number }}">Next</a></li>
+              {% else %}
+                <li class="disabled"><a>Next</a></li>
+              {% endif %}
+            </ul>
+          </div>     
+        {% endif %}
+      {% endif %}
+    </div>
+  </div>
+</div>
+  {% block script %}
+    <script type="text/javascript" src="{{ STATIC_URL }}js/purl.js"></script>
+    <script type="text/javascript">
+
+    function clean_name(str) {
+      return str.split(/[,_ \n]+/).join(' ');
+    }
+
+    function clean_name2(str) {
+      return str.split(/[_ \n]+/).join(' ');
+    }
+
+    // manage facets
+    function facets_get() {
+      var result = {};
+      var facets = purl(document.location).param('selected_facets');
+      if (typeof(facets) === "string") {
+        facets = [facets];
+      }
+      for (i in facets) {
+        var facet = facets[i].split(':')
+        result[facet[0]] = facet[1];
+      }
+      return result;
+    }
+
+    function facets_make_url(facets) {
+      var result = "?q=" + purl(document.location).param('q');
+      for (facet in facets) {
+        if (facets[facet])
+          result += "&selected_facets=" + facet + ':' + facets[facet];
+      }
+      return result;
+    }
+
+    function facets_add(facet) {
+      var f = facet.split(':');
+      var facet_type = f[0];
+      var facet_name = f[1];
+      var facets = facets_get();
+      facets[facet_type + "_exact"] = facet_name;
+      return facets_make_url(facets)
+    }
+
+    function facets_remove(facet) {
+      var facet_name = facet.split(':')[0] + "_exact";
+      var facets = facets_get();
+      delete facets[facet_name];
+      return facets_make_url(facets);
+    }
+
+    function facets_has(facet) {
+      var f = facet.split(':');
+      var facets = facets_get();
+      var facet_type = f[0] + "_exact";
+      var facet_name = f[1];
+      return ((facet_type in facets) && (facets[facet_type] === facet_name));
+    }
+
+    $(document).ready(function() {
+      $('a.accordion-toggle').each(function(index) {
+        var x = clean_name($(this).text().trim());
+        if (x != "Sub-sector"){
+          $(this).css('text-transform', 'capitalize');
+        }
+        $(this).text(x);
+      });
+
+      $('.facet-select').each(function(index) {
+        var link = $(this).find('a');
+        var checkbox = $(this).find('input')[0];
+        var facet = $(link).attr('facet');
+        if (facets_has(facet)) {
+          $(checkbox).attr('checked', true);
+          $(link).attr('href', facets_remove(facet));
+        } else {
+          $(checkbox).attr('checked', false);
+          $(link).attr('href', facets_add(facet));
+        }
+        var x = clean_name2($(link).text().trim());
+        $(link).text(x);
+        if (x != "Engineering and R&D"){
+          $(this).css('text-transform', 'capitalize');
+        }
+        $(checkbox).change(function() {
+          window.location.href = $(link).attr('href');
+        });
+      });
+    });
+    </script>
+
+  {% endblock %}
+{% endblock %}

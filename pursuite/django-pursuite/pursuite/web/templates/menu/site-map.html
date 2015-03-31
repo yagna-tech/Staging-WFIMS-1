@@ -1,0 +1,17 @@
+{% load menu_tags filters %}
+
+{% for child in children %}
+<li>
+  {% if child.children %}
+    <i class="icon-caret-down"></i>
+  {% else %}
+    <i class="icon-caret-up"></i>
+  {% endif %}
+  <a href="{{ child.attr.redirect_url|default:child.get_absolute_url }}">{{ child.get_menu_title | not_none }}</a>
+  {% if child.children %}
+    <ul>
+      {% show_menu from_level to_level extra_inactive extra_active template "" "" child %}
+    </ul>
+  {% endif %}
+</li>
+{% endfor %}

@@ -1,0 +1,25 @@
+{% extends "article.html" %}
+{% load cache cms_tags menu_tags %}
+{% block article %}
+  <div class="row-fluid">
+    <!--Sidebar Starts here-->
+    <div class="span3 sidebar">
+      <div class="block content">
+        <ul class="menu">
+          {% cache 500 inner-article-menu %}
+            {% show_menu_below_id "inner-article" 0 100 100 100 "menu/inner-article-list-menu.html" %}
+          {% endcache %}
+        </ul>
+      </div>
+    </div>
+    <!--Sidebar Ends here-->
+    <!-- ContentArea Starts here -->
+    <div class="span9 article">
+      <div class="row-fluid">
+        <!--Article Content -->
+        {% placeholder content %}
+      </div>
+    </div>
+    <!-- ContentArea Ends here -->
+  </div>
+{% endblock %}

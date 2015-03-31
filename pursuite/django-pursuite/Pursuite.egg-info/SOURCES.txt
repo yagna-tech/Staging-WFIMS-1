@@ -1,0 +1,7 @@
+setup.cfg
+setup.py
+Pursuite.egg-info/PKG-INFO
+Pursuite.egg-info/SOURCES.txt
+Pursuite.egg-info/dependency_links.txt
+Pursuite.egg-info/requires.txt
+Pursuite.egg-info/top_level.txt

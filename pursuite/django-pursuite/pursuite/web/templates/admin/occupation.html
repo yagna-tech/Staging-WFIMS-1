@@ -1,0 +1,39 @@
+{% extends "article.html" %}
+{% load cache menu_tags %}
+
+{% block title %}
+  {{ occupation.name }} | Occupation
+{% endblock %}
+
+{% block heading %}
+  {{ occupation.name }}
+{% endblock %}
+
+{% block breadcrumb %}
+<div class="row-fluid">
+  <ul class="breadcrumb">
+    {{ request.GET.bc|safe }}
+    <li>{{ occupation.name }}</li>
+  </ul>
+</div>
+{% endblock %}
+
+{% block article %}
+  <div class="row-fluid">
+    <!--Sidebar Starts here-->
+    <div class="span3 sidebar">
+      <div class="block content">
+        <ul class="menu">
+          {% cache 500 inner-article-menu %}
+            {% show_menu_below_id "inner-article" 0 100 100 100 "menu/inner-article-list-menu.html" %}
+          {% endcache %}
+        </ul>
+      </div>
+    </div>
+    <div class="span9 article">
+      <div class="row-fluid">
+        <object data="{{ occupation.career_map }}" type="image/svg+xml"></object>
+      </div>
+    </div>
+  </div>
+{% endblock %}

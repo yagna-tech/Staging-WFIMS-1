@@ -1,0 +1,2 @@
+cd ~
+source bin/activate

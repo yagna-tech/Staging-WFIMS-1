@@ -1,0 +1,201 @@
+<svg 
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    width="{{ SVG_WIDTH }}" height="{{ SVG_HEIGHT }}">
+
+    <desc>Career Map for {{ occupation.name }}</desc>
+
+    {# Setting this variable adjusts the rounded corners on rectangles #}
+    {% set BUBBLE = True %}
+
+    {% macro arrow(width, height, text) %}
+    {#  
+      Draw an arrow with an upward head in the given width
+    #}
+    <path d="
+        M 25 30
+        L 10 30
+        L {{ width / 2 }} 10
+        L {{ width-10 }} 30
+        L {{ width-25 }} 30
+        L {{ width-25 }} {{ height }}
+        L 25 {{ height }}
+        L 25 30
+        " style="fill:blue;opacity:0.5"/>
+    <text x="{{ (width / 2) + 5 }}" y="{{ height / 2 }}" font-family="sans-serif" 
+        text-anchor="middle" transform="rotate(-90, {{ (width / 2) + 5 }},{{ height / 2 }})"
+        font-size="15px" fill="white">{{ text }}</text>
+    {% endmacro %}
+
+
+    {% macro render_qp_name(qp, x, y, tspan_x, split=True) %}
+      {% if qp.get_absolute_url() %}<a xlink:href="{{ qp.get_absolute_url() }}" target="_top">{% endif %}
+      <text class="track-name"
+        x="{{ x }}" 
+        y="{{ y }}">
+          {% if split %}
+          {% for word in qp.job_role.split(" ") %}  
+          <tspan x="{{ tspan_x }}" dy="20">{{ word }}</tspan>
+          {% endfor %}
+          {% else %}
+          <tspan x="{{ tspan_x }}" dy="20">{{ qp.job_role }}</tspan>
+          {% endif %}
+          {% if qp|attr('code') %}
+          <tspan x="{{ tspan_x }}" dy="20">({{ qp|attr('code') }})</tspan>
+          {% endif %}
+      </text>
+      {% if qp.get_absolute_url() %}</a>{% endif %}
+    {% endmacro %}
+    
+  <defs>
+    <style type="text/css"><![CDATA[
+    .rect-heading {
+        fill: black;
+        fill-opacity: 0.5;
+    }
+    .title-box {
+        fill: blue;
+        fill-opacity: 0.5;
+    }
+    #title-text {
+        font-family: sans-serif;
+        font-size:20pt;
+        fill: white;
+        text-anchor: middle;
+    }
+    .job-role {
+        fill: grey;
+        fill-opacity: 0.5;
+    }
+    .job-role.active {
+        fill: yellow;
+        fill-opacity: 0.5;
+    } 
+    .track-separator {
+        stroke:gray;
+        stroke-width:5;
+        stroke-opacity:0.5;
+    }
+    .track {
+        
+    }
+    .track-name {
+        font-family: sans-serif;
+        {% if tracks|length <= 7 %}
+        font-size: 12pt;
+        {% else %}
+        font-size: 8pt;
+        {% endif %}
+
+        fill: black;
+        text-anchor: middle;
+    }
+    {% for track, color in tracks.items() %}
+    .track-{{ track.id }} {
+        fill: {{ color }};
+        fill-opacity: 0.5;
+    }
+    {% endfor %}
+    ]]></style>
+  </defs>
+
+  <!-- The first heading -->
+  <g>
+    <rect x="0" y="5" rx="20" ry="20"
+      width="{{ SVG_WIDTH }}" height="{{ ROW_HEIGHT - 10 }}" class="title-box"/>
+    <text id="title-text" x="{{ SVG_WIDTH  / 2 }}" y="{{ ROW_HEIGHT / 2 }}">Career Map for {{ occupation.name }}</text>   
+  </g>
+  <!-- END: The first heading -->
+
+  <!-- Draw outline separators for each track -->
+  <g transform="translate(0, {{ ROW_HEIGHT }})">
+    {% for track in tracks %}
+        {% if not loop.last %}
+        <line class="track-separator" stroke-dasharray="5,5"
+            y1="0" y2="{{ SVG_HEIGHT }}"
+            x1="{{ TRACK_WIDTH * loop.index }}"
+            x2="{{ TRACK_WIDTH * loop.index }}"
+        />
+        {% endif %}
+    {% endfor %}
+  </g>
+  <!-- END: Draw outline separators for each track -->
+
+  <!-- Draw the Arrow/Legend on the right for the different levels -->
+  <g transform="translate(0, {{ ROW_HEIGHT  }})">
+    {% set y = 0 %}
+    {% for level in ('ll', 'ml', 'el') %}
+      {% if level_counter[level] %}
+        <line class="track-separator" stroke-dasharray="5,5"
+          x1="0" x2="{{ SVG_WIDTH }}"
+          y1="{{ y }}" y2="{{ y }}"/>
+        <g transform="translate({{ TRACKS_AREA_WIDTH }}, {{ y }})">
+          {{ arrow(100, (ROW_HEIGHT * level_counter[level]) - 10, level_names[level]) }}
+        </g>
+        {% set y = y + (ROW_HEIGHT * level_counter[level]) %}
+      {% endif %}
+    {% endfor %}
+  </g>
+  <!-- END: Draw the Arrow/Legend on the right for the different levels -->
+  {% macro render_qp(qp, x, y, width, height, class_="", split=True) %}
+  <rect class="track {{ class_ }}" x="{{ x }}"
+    {% if BUBBLE %}rx="20" ry="20"{% endif %}
+    y="{{ y }}" width="{{ width }}" height="{{ height }}"/>
+  {{ render_qp_name(qp, x, y, x + (width/2), split) }} 
+  {% endmacro %}
+
+  <!-- Draw each row of job roles at each levels -->
+  {% for level, track_map in level_data|dictsort %}
+  <!-- Level: {{ level }} -->
+  <g transform="translate(0, {{ ROW_HEIGHT * loop.revindex }})"> 
+      {% for track in tracks %}
+        {% set qps = track_map[track] %}
+        <!-- track: {{ track }} -->
+        {% set n = qps|length %}
+        {% set x = TRACK_WIDTH * tracks.keys().index(track) %}
+        {% if n > 1 %}
+            {# Multiple QPs in a single track #}
+            {% for qp in qps %}
+              {%  set offset = TRACK_WIDTH * loop.index0 / n %}
+              {{ render_qp(qp, x + offset, 10, TRACK_WIDTH / n, BUBBLE_HEIGHT, class_="track-" + track.id|string) }}
+            {% endfor %}
+        {% elif n == 1 %}
+            {# check if the track spreads across multiple levels #}
+            {% set qp = qps|first %}
+
+            {% set cols = qp.get_adjacent_track_count(tracks, track_map, track) %}
+
+            {% if cols > 1 %}
+            {{ render_qp(qp, x, 10, TRACK_WIDTH * cols, BUBBLE_HEIGHT, class_="rect-heading", split=False) }}
+            {% else %}
+            {{ render_qp(qp, x, 10, TRACK_WIDTH, BUBBLE_HEIGHT, class_="track-" + track.id|string) }}
+            {% endif %}
+
+        {% endif %}
+      {% endfor %}
+  </g>
+  {% endfor %}
+  <!-- END Draw each row of job roles at each levels -->
+
+  <!-- Tracks display -->
+  <g transform="translate(0, {{ ROW_HEIGHT * (total_levels + 1) }})">
+    <line class="track-separator" stroke-dasharray="5,5"
+          x1="0" x2="{{ SVG_WIDTH }}" y1="0" y2="0" />
+    <!-- The row height is ROW_HEIGHT * (total levels + 1 (heading)) -->
+    {% for track in tracks %}
+      <rect class="track track-{{ track.id }}" 
+        x="{{ TRACK_WIDTH * loop.index0 }}" 
+        y="10" width="{{ TRACK_WIDTH }}" height="{{ ROW_HEIGHT }}"/>
+      <text class="track-name"
+        x="{{ (TRACK_WIDTH * loop.index0) / 2 }}" 
+        y="{{ ROW_HEIGHT / 3 }}">
+          {% set parentloop = loop %}
+          {% for word in track.name.split(" ") %}  
+          <tspan class="track-name" x="{{ (TRACK_WIDTH * parentloop.index0) + (TRACK_WIDTH / 2) }}" dy="20">{{ word }}</tspan>
+          {% endfor %}
+      </text> 
+    {% endfor %}
+  </g>
+  <!-- END: Tracks display -->
+    
+</svg>

@@ -1,0 +1,49 @@
+{% extends "article.html" %}
+{% load cache cms_tags menu_tags fix_menu_tags %}
+{% block title %}
+Skill Gaps
+{% endblock %}
+
+{% block heading %}
+Skill Gaps
+{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="/">Home</a> » </li>
+    <li><a href="/ssc-projects/">SSC Projects</a> » </li>
+    <li><a href="/ssc-projects/analytics/">Analytics</a> » </li>
+    <li>Skill Gaps</li>
+</ul>
+{% endblock %}
+
+{% block article %}
+  <div class="row-fluid">
+    <!--Sidebar Starts here-->
+    <div class="span3 sidebar">
+      <div class="block content">
+        <ul class="menu">
+          {% cache 500 inner-article-menu %}
+            {% show_menu_below_id "inner-article" 0 100 100 100 "menu/inner-article-list-menu.html" %}
+          {% endcache %}
+        </ul>
+      </div>
+    </div>
+    <div class="span9 article">
+      <div class="row-fluid">
+        <!--Article Content -->
+        {% placeholder content %}
+
+        <!-- content box -->
+        <div>
+            <h2>Skill Gaps in 2013</h2>
+            <a href='/analytics/skillgaps-1'>How do skill gaps vary with category of institutions, category of industry, sub-sectors, regions?</a><br/>
+            <a href='/analytics/skillgaps-2'>Using the data gathered over survey, which skills have the highest gaps as viewed by the industry?</a><br/>
+            <a href='/analytics/skillgaps-3'>Amongst the identified hot skills which skills have the highest positive/negative gaps?</a><br/>
+            <a href='/analytics/skillgaps-4'>What are the skill gaps for more employable skills?</a><br/>
+        </div>
+      </div>
+    </div>
+    <!-- ContentArea Ends here -->
+  </div>
+{% endblock %}

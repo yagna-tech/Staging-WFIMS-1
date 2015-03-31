@@ -1,0 +1,353 @@
+{% extends "article.html" %}
+{% load cache cms_tags menu_tags fix_menu_tags %}
+{% block title %}
+Demand Side - Identification of companies that cover 80 percent of hiring overall, within each sub-sector, category and region ({{ analytics_year }})
+{% endblock %}
+
+{% block heading %}
+ Demand Side - Identification of companies that cover 80 percent of hiring overall, within each sub-sector, category and region ({{ analytics_year }})
+{% endblock %}
+
+{% block breadcrumb %}
+<ul class="breadcrumb">
+    <li><a href="/">Home</a> » </li>
+    <li><a href="/ssc-projects/">SSC Projects</a> » </li>
+    <li><a href="/ssc-projects/analytics/">Analytics</a> » </li>
+    <li><a href="/analytics/demand/{{analytics_year}}">Demand Side</a> » </li>
+    <li>Identification of companies that cover 80 percent of hiring overall, within each sub-sector, category and region ({{ analytics_year }})</li>
+</ul>
+{% endblock %}
+
+{% block article %}
+
+ <div class="row-fluid">
+    <!--Sidebar Starts here-->
+    <div class="span3 sidebar">
+      <div class="block content">
+        <ul class="menu">
+          {% cache 500 inner-article-menu %}
+            {% show_menu_below_id "inner-article" 0 100 100 100 "menu/inner-article-list-menu.html" %}
+          {% endcache %}
+        </ul>
+      </div>
+    </div>
+    <div class="span9 article">
+      <div class="row-fluid">
+        <!--Article Content -->
+        {% placeholder content %}
+
+        <!-- content box -->
+        <div class="row-fluid">    
+          <div style="width: 800px; margin: 0 auto;">
+            <h2>Contribution of Revenue</h2>
+            <div id="contribution-revenue-nasscom"></div>
+            <div id="contribution-revenue-company-type"></div>
+            <div class="clr"></div>
+            <hr/>
+            <h2>Share of gross headcount by top companies</h2>
+            <div id="headcount-cumulative"></div>
+            <hr/>
+            <h2>Share of gross hiring by top companies</h2>
+            <div id="hiring-cumulative"></div>
+            <hr/>
+            <h2>Hiring by Sub-sector</h2>
+            <div id="subsector-trend"></div>
+          <hr/>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- ContentArea Ends here -->
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highcharts/3.0.2/highcharts.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/highcharts/3.0.2/modules/exporting.js"></script>
+  <link type="text/css" rel="stylesheet" href="{{ STATIC_URL }}/css/analytics.css"/>
+  <script type="text/javascript">
+  function render_area_headcount(year)
+  {
+    var container = "headcount-cumulative";
+    $.getJSON('/analytics/data/headcount-contribution/' + year, function(data) {
+      options = {
+        chart: {
+          type: 'area',
+          renderTo: container
+        },
+        title: {
+          text: 'Cumulative headcount by top companies'
+        },
+        subtitle: {
+          text: ''
+        },
+        xAxis: {
+          type: 'category',
+          labels: {
+            formatter: function() {
+                return "Top " + this.value; // clean, unformatted number for year
+            }
+          }
+        },
+        yAxis: {
+          title: {
+            text: '%'
+          },
+          min: 0,
+          max: 100,
+          labels: {
+            formatter: function() {
+              return this.value + '%';
+            }
+          }
+        },
+        tooltip: {
+          pointFormat: 'Cumulative headcount by top {point.x} companies {point.y}%'
+        },
+        plotOptions: {
+          area: {
+            marker: {
+              enabled: false,
+              symbol: 'circle',
+              radius: 2,
+              states: {
+                hover: {
+                  enabled: true
+                }
+              }
+            }
+          }
+        },
+        series: [{
+          name: 'Cumulative headcount by top companies',
+          data: data.cumulative_sums
+        }]
+      };
+      chart = new Highcharts.Chart(options);
+    }).fail(function() {
+      $('#' + container).html("<h3>Data not available!</h3>");
+    });
+  }
+
+  function render_area_hiring(year)
+  {
+    var container = "hiring-cumulative";
+    $.getJSON('/analytics/data/hiring-contribution/' + year, function(data) {
+      options = {
+        chart: {
+          type: 'area',
+          renderTo: container
+        },
+        title: {
+          text: 'Cumulative hiring by top companies'
+        },
+        subtitle: {
+          text: ''
+        },
+        xAxis: {
+          type: 'category',
+          labels: {
+            formatter: function() {
+                return "Top " + this.value; // clean, unformatted number for year
+            }
+          }
+        },
+        yAxis: {
+          title: {
+            text: '%'
+          },
+          min: 0,
+          max: 100,
+          labels: {
+            formatter: function() {
+              return this.value + '%';
+            }
+          }
+        },
+        tooltip: {
+          pointFormat: 'Cumulative hiring by top {point.x} companies {point.y}%'
+        },
+        plotOptions: {
+          area: {
+            marker: {
+              enabled: false,
+              symbol: 'circle',
+              radius: 2,
+              states: {
+                hover: {
+                  enabled: true
+                }
+              }
+            }
+          }
+        },
+        series: [{
+          name: 'Cumulative hiring by top companies',
+          data: data.cumulative_sums
+        }]
+      };
+      chart = new Highcharts.Chart(options);
+    }).fail(function() {
+      $('#' + container).html("<h3>Data not available!</h3>");
+    });
+  }
+  
+  function render_pie_revenue_membership(year)
+  {
+    var container = "contribution-revenue-nasscom";
+    $.getJSON('/analytics/data/revenue-company/' + year, function(data) {
+      options = {
+        chart: {
+          plotBackgroundColor: null,
+          plotBorderWidth: null,
+          plotShadow: false,
+          renderTo: container
+        },
+        title: {
+          text: 'Contribution to Indian IT/IT-eS industry revenue'
+        },
+        tooltip: {
+          pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+        },
+        plotOptions: {
+          pie: {
+            allowPointSelect: true,
+            cursor: 'pointer',
+            dataLabels: {
+              enabled: true,
+              color: '#000000',
+              connectorColor: '#000000',
+              format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+            }
+          }
+        },
+        series: [{
+          type: 'pie',
+          name: 'Revenue',
+          data: [
+            ['NASSCOM Members (' + data.nasscom_members_num + ')', data.nasscom_members_revenue],
+            ['Non NASSCOM Members (' + data.non_nasscom_members_num + ')', data.non_nasscom_members_revenue],
+          ]
+        }]
+      };
+      chart = new Highcharts.Chart(options);
+    })
+    .fail(function() {
+      $('#' + container).html("<h3>Data not available!</h3>");
+    });
+  };
+  
+  function render_pie_revenue_company_type(year)
+  {
+    var container = "contribution-revenue-company-type";
+    $.getJSON('/analytics/data/revenue-company-type/' + year, function(data) {
+      options = {
+        chart: {
+          plotBackgroundColor: null,
+          plotBorderWidth: null,
+          plotShadow: false,
+          renderTo: container
+        },
+        title: {
+          text: 'Total % of companies by type'
+        },
+        tooltip: {
+          pointFormat: '{series.name}: <b>{point.percentage:.1f}%</b>'
+        },
+        plotOptions: {
+          pie: {
+            allowPointSelect: true,
+            cursor: 'pointer',
+            dataLabels: {
+              enabled: true,
+              color: '#000000',
+              connectorColor: '#000000',
+              format: '<b>{point.name}</b>: {point.percentage:.1f} %'
+            }
+          }
+        },
+        series: [{
+          type: 'pie',
+          name: 'Revenue',
+          data: data
+        }]
+      };
+      chart = new Highcharts.Chart(options);
+    })
+    .fail(function() {
+      $('#' + container).html("<h3>Data not available!</h3>");
+    });
+  };
+  
+  function render_stacked_subsector_trend()
+  {
+    var container = "subsector-trend";
+    $.getJSON('/analytics/data/hiring-subsector-trend/', function(data) {
+      options = {
+        chart: {
+          type: 'column',
+          renderTo: container,
+        },
+        title: {
+          text: 'Hiring by Subsector'
+        },
+        xAxis: {
+          title: {
+            text: 'Year'
+          },
+          categories: data.years
+        },
+        yAxis: {
+          min: 0,
+          title: {
+            text: 'Hiring'
+          },
+          stackLabels: {
+            enabled: true,
+            style: {
+              fontWeight: 'bold',
+              color: (Highcharts.theme && Highcharts.theme.textColor) || 'gray'
+            }
+          }
+        },
+        legend: {
+          align: 'right',
+          x: -70,
+          verticalAlign: 'top',
+          y: 20,
+          floating: true,
+          backgroundColor: (Highcharts.theme && Highcharts.theme.legendBackgroundColorSolid) || 'white',
+          borderColor: '#CCC',
+          borderWidth: 1,
+          shadow: false
+        },
+        tooltip: {
+          formatter: function() {
+              return '<b>'+ this.x +'</b><br/>'+
+                  this.series.name +': '+ this.y +'<br/>'+
+                  'Total: '+ this.point.stackTotal;
+          }
+        },
+        plotOptions: {
+          column: {
+            stacking: 'normal',
+            dataLabels: {
+              enabled: true,
+              color: (Highcharts.theme && Highcharts.theme.dataLabelsColor) || 'white'
+            }
+          }
+        },
+        series: data.series
+      };
+      chart = new Highcharts.Chart(options);
+    })
+    .fail(function() {
+      $('#' + container).html("<h3>Data not available!</h3>");
+    });    
+  }
+
+  $(function() {
+    render_pie_revenue_membership({{analytics_year}});
+    render_pie_revenue_company_type({{analytics_year}});
+    render_area_headcount({{analytics_year}});
+    render_area_hiring({{analytics_year}});
+    render_stacked_subsector_trend();
+  });
+</script>
+{% endblock %}
